@@ -83,6 +83,18 @@ describe("Find in the diff viewer", () => {
     await waitFor(() => expect(bar.isConnected).toBe(false));
   });
 
+  it("closes with Esc in the editor while a found match is selected", async () => {
+    useKeymap.setState({ overrides: KEYMAP });
+    render(<DiffEditor input={revisions} />);
+    const v = await press(1, "KeyF");
+    fireEvent.change(await screen.findByRole("textbox", { name: "Find" }), { target: { value: "foo" } });
+    await waitFor(() => expect(v.state.selection.main.empty).toBe(false));
+    v.focus();
+    fireEvent.keyDown(v.contentDOM, { key: "Escape", code: "Escape", keyCode: 27 });
+    await waitFor(() => expect(screen.queryByRole("search")).toBeNull());
+    expect(document.querySelectorAll(".cm-openidea-findMatch")).toHaveLength(0);
+  });
+
   it("follows a rebound shortcut", async () => {
     useKeymap.setState({ overrides: { ...KEYMAP, "find.inFile": ["Meta+J"] } });
     render(<DiffEditor input={revisions} />);

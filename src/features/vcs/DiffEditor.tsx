@@ -3,7 +3,7 @@ import { focusedDiffNavigator, setFocusedDiffNavigator, type DiffNavigator } fro
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { EditorView, keymap } from "@codemirror/view";
-import { Text, type Extension } from "@codemirror/state";
+import { Prec, Text, type Extension } from "@codemirror/state";
 import { history, historyKeymap } from "@codemirror/commands";
 import {
   MergeView,
@@ -257,6 +257,8 @@ export function DiffEditor({ input }: { input: EditorInput }) {
     const inclusion = includable ? inclusionGutter(path, textA) : [];
     const side = (att: DocumentAttachment | null, editable: boolean, notes?: "left" | "right"): Extension[] => [
       viewerBase({ readOnly: !editable, findBar: true }),
+      // Esc closes the find bar before it collapses the selection (a found match); open popups go first.
+      Prec.high(keymap.of([{ key: "Escape", run: () => findEscape.current() }])),
       lang,
       att?.extension ?? [],
       editable ? [editableExtensions(), embeddedEditorExtensions(path)] : [],
@@ -528,6 +530,7 @@ export function DiffEditor({ input }: { input: EditorInput }) {
   // Find (⌘F / ⌘R / ⌘G): the editor's find bar over the focused side.
   const [find, setFind] = useState<{ side: Side; replace: boolean; seq: number } | null>(null);
   const findWatchers = useRef<Record<Side, Set<ViewUpdateFn>>>({ a: new Set(), b: new Set() });
+  const findEscape = useRef<() => boolean>(() => false);
   /** The side the bar searches (the last one, once closed: closing clears its highlights). */
   const findSide = useRef<Side>("b");
   const findOpen = useRef(false);
@@ -564,6 +567,11 @@ export function DiffEditor({ input }: { input: EditorInput }) {
     findOpen.current = false;
     setFind(null);
     viewOf(findSide.current)?.focus();
+  };
+  findEscape.current = () => {
+    if (!findOpen.current) return false;
+    closeFind();
+    return true;
   };
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.defaultPrevented) return;
