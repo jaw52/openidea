@@ -4355,5 +4355,6 @@
   "{count} matches in {files} files": "{files} 个文件中有 {count} 个匹配项",
   "{count} excluded": "已排除 {count} 项",
   "{count} file with conflicts": "{count} 个文件存在冲突",
-  "{count} files with conflicts": "{count} 个文件存在冲突"
+  "{count} files with conflicts": "{count} 个文件存在冲突",
+  "Clear {label} filter": "清除{label}筛选器"
 }

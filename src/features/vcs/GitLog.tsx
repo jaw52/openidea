@@ -166,7 +166,7 @@ function branchDetail(n: BranchTreeNode): string | undefined {
   const b = n.branch;
   if (!b) return undefined;
   const sync = [b.behind > 0 ? `↓${b.behind}` : "", b.ahead > 0 ? `↑${b.ahead}` : ""].filter(Boolean).join(" ");
-  return [b.current ? "current" : "", sync].filter(Boolean).join("  ") || undefined;
+  return [b.current ? tx("current") : "", sync].filter(Boolean).join("  ") || undefined;
 }
 
 export function BranchesPanel() {
@@ -235,7 +235,7 @@ export function BranchesPanel() {
         key={`${root ?? ""}:${branchesLoaded}`}
         roots={roots}
         getKey={(n) => n.key}
-        getLabel={(n) => n.label}
+        getLabel={(n) => (n.kind === "head" || n.kind === "group" ? tx(n.label) : n.label)}
         getChildren={(n) => n.children}
         isExpandable={(n) => !!n.children}
         defaultExpanded={[
@@ -317,15 +317,15 @@ function FilterButton({
       <button type="button" className={styles.filterMain} onClick={onOpen} aria-haspopup="menu">
         {value ? (
           <>
-            {label}: <span className={styles.filterValue}>{value}</span>
+            {tx(label)}: <span className={styles.filterValue}>{value}</span>
           </>
         ) : (
-          label
+          tx(label)
         )}
         {!value && <Icon name="chevron-down" size={12} className={styles.filterChevron} />}
       </button>
       {value && (
-        <button type="button" className={styles.filterClear} aria-label={`Clear ${label} filter`} onClick={onClear}>
+        <button type="button" className={styles.filterClear} aria-label={tx`Clear ${label} filter`} onClick={onClear}>
           <Icon name="close" size={12} />
         </button>
       )}
