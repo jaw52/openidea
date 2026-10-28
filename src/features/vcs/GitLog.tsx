@@ -325,7 +325,12 @@ function FilterButton({
         {!value && <Icon name="chevron-down" size={12} className={styles.filterChevron} />}
       </button>
       {value && (
-        <button type="button" className={styles.filterClear} aria-label={tx`Clear ${tx(label)} filter`} onClick={onClear}>
+        <button
+          type="button"
+          className={styles.filterClear}
+          aria-label={tx`Clear ${tx(label)} filter`}
+          onClick={onClear}
+        >
           <Icon name="close" size={12} />
         </button>
       )}
