@@ -62,7 +62,7 @@ export function checksText(s: ChecksSummary): string {
   const parts: string[] = [];
   if (s.failed) parts.push(tx`${s.failed} failing`);
   if (s.pending) parts.push(tx`${s.pending} pending`);
-  if (s.passed) parts.push(tx`${s.passed} successful`);
+  if (s.passed) parts.push(tx`${s.passed} passed`);
   if (s.other) parts.push(tx`${s.other} skipped`);
   return parts.length ? parts.join(", ") : tx`No checks`;
 }

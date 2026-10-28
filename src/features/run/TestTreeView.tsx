@@ -179,7 +179,7 @@ export function TestTreeView({ results, version, cwd, selected, onSelect, runnin
       <div className={styles.testHeader}>
         <StatusIcon status={status} />
         <span className={styles.testCounts}>
-          {counts.failed > 0 && <span className={styles.failed}>{tx`${counts.failed} failed`}</span>}
+          {counts.failed > 0 && <span className={styles.failed}>{tx`${counts.failed} failing`}</span>}
           {counts.passed > 0 && <span>{tx`${counts.passed} passed`}</span>}
           {counts.skipped > 0 && <span className={styles.skipped}>{tx`${counts.skipped} ignored`}</span>}
           {counts.total === 0 && <span className={styles.skipped}>{running ? tx("Running…") : tx("No tests")}</span>}
