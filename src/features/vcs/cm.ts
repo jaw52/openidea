@@ -19,6 +19,8 @@ import { getChunks } from "@codemirror/merge";
 import { defaultKeymap } from "@codemirror/commands";
 import { search, searchKeymap } from "@codemirror/search";
 import { tags as t } from "@lezer/highlight";
+import { findExtension } from "@/editor/core/cm/find";
+import { findLocals, findStyles } from "@/editor/core/cm/theme";
 
 const wholeLine = Decoration.line({ class: "cm-diffWholeLine" });
 
@@ -98,6 +100,7 @@ export const viewerTheme = EditorView.theme(
       backgroundColor: "var(--bg-app)",
       color: "var(--fg)",
       fontSize: "var(--fs-code)",
+      ...findLocals,
     },
     ".cm-scroller": { fontFamily: "var(--font-mono)", fontWeight: "var(--fw-code, 400)", lineHeight: "var(--lh-code)" },
     ".cm-content": { caretColor: "var(--accent)", WebkitUserSelect: "text", userSelect: "text" },
@@ -163,18 +166,23 @@ export const viewerTheme = EditorView.theme(
     },
     ".cm-panels": { backgroundColor: "var(--bg-elev)", color: "var(--fg)" },
     ".cm-searchMatch": { backgroundColor: "color-mix(in srgb, var(--accent) 22%, transparent)" },
+    ...findStyles,
   },
   { dark: true },
 );
 
-/** Base extensions for a read-only (or editable) viewer pane. */
-export function viewerBase(opts: { readOnly: boolean; lineNumbers?: boolean }): Extension[] {
+/**
+ * Base extensions for a read-only (or editable) viewer pane. `findBar`: the
+ * viewer shows the editor's find bar (FindPanel) instead of CodeMirror's panel.
+ */
+export function viewerBase(opts: { readOnly: boolean; lineNumbers?: boolean; findBar?: boolean }): Extension[] {
   return [
     opts.lineNumbers === false ? [] : lineNumbers(),
     drawSelection(),
     highlightActiveLine(),
-    search({ top: true }),
-    keymap.of([...searchKeymap, ...defaultKeymap]),
+    opts.findBar
+      ? [findExtension(), keymap.of(defaultKeymap)]
+      : [search({ top: true }), keymap.of([...searchKeymap, ...defaultKeymap])],
     syntaxHighlighting(viewerHighlight),
     viewerTheme,
     wholeChangedLines,

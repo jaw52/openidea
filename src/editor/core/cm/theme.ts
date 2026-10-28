@@ -8,6 +8,31 @@
 import { EditorView } from "@codemirror/view";
 import { BRACKET_COLORS } from "./rainbowBrackets";
 
+/** The `--editor-*` locals of `findStyles`, for the `&` rule. */
+export const findLocals = {
+  "--editor-search": "var(--bg-search-match, color-mix(in srgb, var(--warning) 30%, transparent))",
+  "--editor-search-current": "var(--bg-search-match-current, color-mix(in srgb, var(--warning) 48%, transparent))",
+};
+
+/** Find in file highlights (cm/find.ts), also for viewers with their own theme (diff). */
+export const findStyles = {
+  ".cm-openidea-findMatch": {
+    backgroundColor: "var(--editor-search)",
+    borderRadius: "2px",
+  },
+  ".cm-openidea-findExcluded": {
+    textDecoration: "line-through",
+    textDecorationColor: "var(--fg-muted)",
+  },
+  ".cm-openidea-findScope": {
+    backgroundColor: "var(--editor-selection-inactive, var(--bg-editor-selection-inactive))",
+  },
+  ".cm-openidea-findMatch-current": {
+    backgroundColor: "var(--editor-search-current)",
+    outline: "1px solid color-mix(in srgb, var(--editor-search-current) 60%, var(--fg-strong))",
+  },
+};
+
 export const openideaTheme = EditorView.theme({
   "&": {
     height: "100%",
@@ -21,8 +46,7 @@ export const openideaTheme = EditorView.theme({
     "--editor-selection-inactive":
       "var(--bg-editor-selection-inactive, color-mix(in srgb, var(--accent) 14%, transparent))",
     "--editor-indent-guide": "var(--border-indent-guide, var(--border))",
-    "--editor-search": "var(--bg-search-match, color-mix(in srgb, var(--warning) 30%, transparent))",
-    "--editor-search-current": "var(--bg-search-match-current, color-mix(in srgb, var(--warning) 48%, transparent))",
+    ...findLocals,
     "--editor-brace": "var(--bg-matched-brace, color-mix(in srgb, var(--accent) 22%, transparent))",
     "--editor-fold-chip": "var(--bg-fold-placeholder, color-mix(in srgb, var(--fg-muted) 14%, transparent))",
   },
@@ -199,21 +223,7 @@ export const openideaTheme = EditorView.theme({
   },
 
   // Find in file (cm/find.ts)
-  ".cm-openidea-findMatch": {
-    backgroundColor: "var(--editor-search)",
-    borderRadius: "2px",
-  },
-  ".cm-openidea-findExcluded": {
-    textDecoration: "line-through",
-    textDecorationColor: "var(--fg-muted)",
-  },
-  ".cm-openidea-findScope": {
-    backgroundColor: "var(--editor-selection-inactive)",
-  },
-  ".cm-openidea-findMatch-current": {
-    backgroundColor: "var(--editor-search-current)",
-    outline: "1px solid color-mix(in srgb, var(--editor-search-current) 60%, var(--fg-strong))",
-  },
+  ...findStyles,
 
   // Overlays
   ".cm-tooltip": {
