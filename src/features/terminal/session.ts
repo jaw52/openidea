@@ -15,7 +15,14 @@ import { splitCommandLine } from "@/platform/commandLine";
 import { useProject } from "@/platform/project";
 import { workflowSettings, type TerminalSettingsValid } from "@/platform/workflowSettings";
 import { editorPrefs } from "@/platform/editorSettings";
-import { readSearchDecorations, readTerminalTheme, remeasureWhenFontsLoad, terminalFont, type EditorFont, type TerminalFontSettings } from "./theme";
+import {
+  readSearchDecorations,
+  readTerminalTheme,
+  remeasureWhenFontsLoad,
+  terminalFont,
+  type EditorFont,
+  type TerminalFontSettings,
+} from "./theme";
 
 export interface TerminalSearchOptions {
   caseSensitive: boolean;
@@ -223,7 +230,8 @@ export class TerminalSession {
         return true;
       }),
       this.term.registerLinkProvider({
-        provideLinks: (y, callback) => callback(workflowSettings().terminal.highlightHyperlinks ? this.linksAt(y) : undefined),
+        provideLinks: (y, callback) =>
+          callback(workflowSettings().terminal.highlightHyperlinks ? this.linksAt(y) : undefined),
       }),
       this.term.onBell(() => {
         if (workflowSettings().terminal.audibleBell) beep();
@@ -256,7 +264,13 @@ export class TerminalSession {
     const o = this.term.options;
     if (o.fontFamily !== font.family) {
       o.fontFamily = font.family;
-      if (this.opened) remeasureWhenFontsLoad(this.term, font, () => !this.disposed, () => this.scheduleFit());
+      if (this.opened)
+        remeasureWhenFontsLoad(
+          this.term,
+          font,
+          () => !this.disposed,
+          () => this.scheduleFit(),
+        );
     }
     if (o.fontSize !== font.size) o.fontSize = font.size;
     if (o.lineHeight !== font.lineHeight) o.lineHeight = font.lineHeight;
@@ -310,7 +324,12 @@ export class TerminalSession {
       // xterm's DOM renderer: the WebGL one rasterizes glyphs per background, so
       // selected text rendered at a visibly different weight than the rest.
       this.term.open(this.host);
-      remeasureWhenFontsLoad(this.term, fontFor(workflowSettings().terminal), () => !this.disposed, () => this.scheduleFit());
+      remeasureWhenFontsLoad(
+        this.term,
+        fontFor(workflowSettings().terminal),
+        () => !this.disposed,
+        () => this.scheduleFit(),
+      );
       this.term.textarea?.addEventListener("focus", () => this.opts.onFocus(this.key));
     }
     this.resizeObserver?.disconnect();
@@ -378,7 +397,15 @@ export class TerminalSession {
       const args = custom ? custom.args : shellArgs;
       const info = await call(
         commands.termSpawn(
-          { cwd: this.opts.cwd, shell: shell ?? null, args, env: { ...t.env }, cols, rows, shellIntegration: (!custom || !!custom.shell) && t.shellIntegration },
+          {
+            cwd: this.opts.cwd,
+            shell: shell ?? null,
+            args,
+            env: { ...t.env },
+            cols,
+            rows,
+            shellIntegration: (!custom || !!custom.shell) && t.shellIntegration,
+          },
           channel,
         ),
       );
@@ -495,9 +522,15 @@ export class TerminalSession {
       return false;
     }
     this.searchDecorations ??= readSearchDecorations();
-    const options: ISearchOptions = { ...opts, incremental: direction === "next" && incremental, decorations: this.searchDecorations };
+    const options: ISearchOptions = {
+      ...opts,
+      incremental: direction === "next" && incremental,
+      decorations: this.searchDecorations,
+    };
     try {
-      return direction === "next" ? this.searchAddon.findNext(query, options) : this.searchAddon.findPrevious(query, options);
+      return direction === "next"
+        ? this.searchAddon.findNext(query, options)
+        : this.searchAddon.findPrevious(query, options);
     } catch {
       // Invalid regular expression.
       this.clearSearch();

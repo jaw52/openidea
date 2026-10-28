@@ -252,11 +252,7 @@ function Stream({ task, entries, finding, findFocus, onCloseFind }: StreamProps)
           showContextMenu(e, items);
         }}
       >
-        {entries === null ? (
-          <Spinner />
-        ) : (
-          entries.map((entry, i) => <Entry key={i} task={task} entry={entry} />)
-        )}
+        {entries === null ? <Spinner /> : entries.map((entry, i) => <Entry key={i} task={task} entry={entry} />)}
         {(task.status === "running" || task.status === "starting") && !waiting && (
           <div className={styles.working}>
             <Spinner size={12} />
@@ -407,7 +403,9 @@ function FindBar({
         className={styles.findField}
         trailing={
           query.trim() ? (
-            <span className={styles.findCount}>{ranges.length ? `${index + 1}/${ranges.length}` : tx("0 results")}</span>
+            <span className={styles.findCount}>
+              {ranges.length ? `${index + 1}/${ranges.length}` : tx("0 results")}
+            </span>
           ) : null
         }
         onKeyDown={(e) => {
@@ -421,8 +419,20 @@ function FindBar({
           }
         }}
       />
-      <IconButton icon="arrow-up" title={tx("Previous Occurrence")} size="small" disabled={!ranges.length} onClick={() => step(-1)} />
-      <IconButton icon="arrow-down" title={tx("Next Occurrence")} size="small" disabled={!ranges.length} onClick={() => step(1)} />
+      <IconButton
+        icon="arrow-up"
+        title={tx("Previous Occurrence")}
+        size="small"
+        disabled={!ranges.length}
+        onClick={() => step(-1)}
+      />
+      <IconButton
+        icon="arrow-down"
+        title={tx("Next Occurrence")}
+        size="small"
+        disabled={!ranges.length}
+        onClick={() => step(1)}
+      />
       <IconButton icon="close" title={tx("Close")} size="small" onClick={close} />
     </div>
   );
@@ -464,7 +474,10 @@ function Entry({ task, entry }: { task: AgentTask; entry: AgentEntry }) {
           </div>
           {entry.items.map((item, i) => (
             <div key={i} className={clsx(styles.planItem, item.status === "completed" && styles.planDone)}>
-              <Icon name={item.status === "completed" ? "check" : item.status === "in_progress" ? "run" : "minus"} size={12} />
+              <Icon
+                name={item.status === "completed" ? "check" : item.status === "in_progress" ? "run" : "minus"}
+                size={12}
+              />
               {item.content}
             </div>
           ))}
@@ -484,7 +497,8 @@ function Entry({ task, entry }: { task: AgentTask; entry: AgentEntry }) {
 
 function UserMessage({ task, entry }: { task: AgentTask; entry: UserEntry }) {
   const tx = useTx();
-  const fail = (e: unknown) => notifications().notify({ level: "error", title: "Couldn't send the message", body: String(e) });
+  const fail = (e: unknown) =>
+    notifications().notify({ level: "error", title: "Couldn't send the message", body: String(e) });
   const archived = task.status === "archived";
   return (
     <div className={styles.message}>
@@ -584,7 +598,9 @@ function PermissionLine({ task, entry }: { task: AgentTask; entry: Extract<Agent
 /** The open permission request, as an editor notification banner above the conversation. */
 function PermissionBanner({ task, entries }: { task: AgentTask; entries: AgentEntry[] | null }) {
   const [busy, setBusy] = useState(false);
-  const entry = entries?.find((e): e is Extract<AgentEntry, { type: "permission" }> => e.type === "permission" && !e.chosen);
+  const entry = entries?.find(
+    (e): e is Extract<AgentEntry, { type: "permission" }> => e.type === "permission" && !e.chosen,
+  );
   if (!entry) return null;
   const answer = (option: string | null) => {
     setBusy(true);
@@ -621,7 +637,9 @@ function SessionComposer({ task, entries }: { task: AgentTask; entries: AgentEnt
     if (!canSend(composer) || sending || task.status === "archived") return;
     setSending(true);
     sendMessage(task.id, now)
-      .catch((e: unknown) => notifications().notify({ level: "error", title: "Couldn't send the message", body: String(e) }))
+      .catch((e: unknown) =>
+        notifications().notify({ level: "error", title: "Couldn't send the message", body: String(e) }),
+      )
       .finally(() => setSending(false));
   };
   const setOption = (id: string, value: string) =>
@@ -667,7 +685,8 @@ function SessionComposer({ task, entries }: { task: AgentTask; entries: AgentEnt
 
 /** Messages waiting for the turn to end: send now, edit, or drop. */
 function Queue({ task }: { task: AgentTask }) {
-  const fail = (e: unknown) => notifications().notify({ level: "error", title: "Couldn't update the queue", body: String(e) });
+  const fail = (e: unknown) =>
+    notifications().notify({ level: "error", title: "Couldn't update the queue", body: String(e) });
   return (
     <div className={styles.queue} aria-label={tx("Queued messages")}>
       {task.queue.map((q) => (
@@ -676,11 +695,25 @@ function Queue({ task }: { task: AgentTask }) {
           <span className={styles.queuedText} title={q.prompt.text}>
             {q.prompt.text || <T>Image</T>}
           </span>
-          <button type="button" className={styles.bannerLink} onClick={() => void sendQueuedNow(task.id, q.id).catch(fail)}>
+          <button
+            type="button"
+            className={styles.bannerLink}
+            onClick={() => void sendQueuedNow(task.id, q.id).catch(fail)}
+          >
             <T>Send now</T>
           </button>
-          <IconButton icon="edit" title="Edit" size="small" onClick={() => void editQueued(task.id, q.id).catch(fail)} />
-          <IconButton icon="close" title="Remove" size="small" onClick={() => void removeQueued(task.id, q.id).catch(fail)} />
+          <IconButton
+            icon="edit"
+            title="Edit"
+            size="small"
+            onClick={() => void editQueued(task.id, q.id).catch(fail)}
+          />
+          <IconButton
+            icon="close"
+            title="Remove"
+            size="small"
+            onClick={() => void removeQueued(task.id, q.id).catch(fail)}
+          />
         </div>
       ))}
     </div>
