@@ -7,7 +7,7 @@
  * is prefetched when the app goes idle; until then markup shows as plain text.
  */
 import { useMemo, useSyncExternalStore } from "react";
-import { LanguageDescription } from "@codemirror/language";
+import { LanguageDescription, type Language } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { classHighlighter, highlightTree } from "@lezer/highlight";
 import type { Markup } from "@/bindings";
@@ -130,7 +130,7 @@ export async function codeHighlighter(
   if (!desc) return null;
   try {
     const support = desc.support ?? (await desc.load());
-    const tree = support.language.parser.parse(text);
+    const tree = await parseSliced(support.language.parser, text);
     return (from, to) => {
       const out: CodeToken[] = [];
       highlightTree(
@@ -148,6 +148,21 @@ export async function codeHighlighter(
     };
   } catch {
     return null;
+  }
+}
+
+/** Parse budget per task: a whole file (up to ~1s) yields to input and rendering in between. */
+const PARSE_SLICE_MS = 8;
+
+async function parseSliced(parser: Language["parser"], text: string): Promise<ReturnType<Language["parser"]["parse"]>> {
+  const parse = parser.startParse(text);
+  for (;;) {
+    const start = performance.now();
+    while (performance.now() - start < PARSE_SLICE_MS) {
+      const tree = parse.advance();
+      if (tree) return tree;
+    }
+    await new Promise((r) => setTimeout(r, 0));
   }
 }
 

@@ -63,6 +63,18 @@ describe("lineTokens", () => {
     ]);
   });
 
+  it("parses a big file in slices, letting other tasks run in between", async () => {
+    const body = "const a = 1; // filler line for the parser\n".repeat(8000);
+    disk.set("/p/big.ts", `${body}const lib = "x";`);
+    let ticks = 0;
+    const timer = setInterval(() => ticks++, 0);
+    const text = 'lib = "x";';
+    const tokens = await lineTokens({ path: "/p/big.ts", line: 8000, col: 6 }, text);
+    clearInterval(timer);
+    expect(classesOf(text, tokens)).toContain('"x":tok-string');
+    expect(ticks).toBeGreaterThan(0);
+  });
+
   it("leaves files of unknown languages plain", async () => {
     disk.set("/p/a.unknownext", SOURCE);
     expect(await lineTokens({ path: "/p/a.unknownext", line: 1, col: 1 }, "* A read-only")).toEqual([]);
