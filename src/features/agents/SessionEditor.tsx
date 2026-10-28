@@ -21,7 +21,7 @@ import {
   selectableText,
   showContextMenu,
 } from "@/ui";
-import { useTx } from "@/platform/i18n";
+import { useTx, tx } from "@/platform/i18n";
 import { TaskStatusIcon } from "./AgentsView";
 import { Composer } from "./Composer";
 import { canSend, emptyDraft, usageLabel } from "./composerModel";
@@ -617,7 +617,7 @@ function SessionComposer({ task, entries }: { task: AgentTask; entries: AgentEnt
 function Queue({ task }: { task: AgentTask }) {
   const fail = (e: unknown) => notifications().notify({ level: "error", title: "Couldn't update the queue", body: String(e) });
   return (
-    <div className={styles.queue} aria-label="Queued messages">
+    <div className={styles.queue} aria-label={tx("Queued messages")}>
       {task.queue.map((q) => (
         <div key={q.id} className={styles.queued}>
           <Icon name="pause" size={12} className={styles.muted} />
@@ -649,7 +649,7 @@ function ChangesPane({ task, changes }: { task: AgentTask; changes: AgentChange[
   const added = changes?.reduce((n, c) => n + c.added, 0) ?? 0;
   const removed = changes?.reduce((n, c) => n + c.removed, 0) ?? 0;
   return (
-    <aside className={styles.changes} aria-label="Changes">
+    <aside className={styles.changes} aria-label={tx("Changes")}>
       <div className={styles.changesHeader}>
         <span className={styles.changesTitle}>
           <T>Changes</T>

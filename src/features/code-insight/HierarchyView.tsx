@@ -22,6 +22,7 @@ import {
   hierarchyTarget,
   loadChildren,
   refreshHierarchy,
+  noneFoundLabel,
   setDirection,
   useHierarchy,
   type HierarchyNode,
@@ -74,7 +75,7 @@ function HierarchyToolbar() {
   const direction = useHierarchy((s) => s.direction);
   const autoscroll = useHierarchyOptions((s) => s.autoscroll);
   return (
-    <div className={styles.toolbar} role="toolbar" aria-label="Hierarchy actions">
+    <div className={styles.toolbar} role="toolbar" aria-label={tx("Hierarchy actions")}>
       <IconButton
         icon="arrow-up"
         size="small"
@@ -165,7 +166,7 @@ export function HierarchyView() {
             </span>
           )}
           {!loading && !failed.has(ROOT_ID) && children.get(ROOT_ID)?.length === 0 && (
-            <span className={styles.muted}>— no {directionLabel(mode, direction).toLowerCase()} found</span>
+            <span className={styles.muted}>{noneFoundLabel(mode, direction)}</span>
           )}
         </span>
       );
@@ -180,7 +181,7 @@ export function HierarchyView() {
         <span className={styles.muted}>
           {basename(item.path)}:{item.selectionRange.start.line + 1}
         </span>
-        {calls > 1 && <span className={styles.muted}>({calls} calls)</span>}
+        {calls > 1 && <span className={styles.muted}>{tx`(${calls} calls)`}</span>}
         {failed.has(n.id) && (
           <span className={styles.error}>
             <T>failed to load</T>

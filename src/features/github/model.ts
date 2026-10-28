@@ -1,5 +1,6 @@
 /** Pure helpers of the Pull Requests view (labels, check summaries, review threads, diff inputs). */
 import type { ChangedFile, PrCheck, PrDiffRevisions, PrFile, PrReviewComment, PullRequestDetails, PullRequestSummary } from "@/platform/ipc";
+import { tx } from "@/platform/i18n";
 
 export function stateLabel(pr: PullRequestSummary): string {
   if (pr.state === "merged") return "Merged";
@@ -58,11 +59,11 @@ export function checksSummary(checks: readonly PrCheck[]): ChecksSummary {
 
 export function checksText(s: ChecksSummary): string {
   const parts: string[] = [];
-  if (s.failed) parts.push(`${s.failed} failing`);
-  if (s.pending) parts.push(`${s.pending} pending`);
-  if (s.passed) parts.push(`${s.passed} successful`);
-  if (s.other) parts.push(`${s.other} skipped`);
-  return parts.length ? parts.join(", ") : "No checks";
+  if (s.failed) parts.push(tx`${s.failed} failing`);
+  if (s.pending) parts.push(tx`${s.pending} pending`);
+  if (s.passed) parts.push(tx`${s.passed} successful`);
+  if (s.other) parts.push(tx`${s.other} skipped`);
+  return parts.length ? parts.join(", ") : tx`No checks`;
 }
 
 /** "3 minutes ago"-style text for an ISO date. */
