@@ -325,7 +325,7 @@ function FilterButton({
         {!value && <Icon name="chevron-down" size={12} className={styles.filterChevron} />}
       </button>
       {value && (
-        <button type="button" className={styles.filterClear} aria-label={tx`Clear ${label} filter`} onClick={onClear}>
+        <button type="button" className={styles.filterClear} aria-label={tx`Clear ${tx(label)} filter`} onClick={onClear}>
           <Icon name="close" size={12} />
         </button>
       )}
@@ -988,8 +988,8 @@ export function CommitDetails({ commits }: { commits: Commit[] }) {
           <div className={styles.filesPane}>
             <div className={styles.detailsBar} role="toolbar" aria-label={tx("Changed files")}>
               <span className={styles.detailsCount}>
-                {files ? `${files.length} file${files.length === 1 ? "" : "s"}` : ""}
-                {many ? ` in ${chosen.length} commits` : ""}
+                {files ? fileCount(files.length) : ""}
+                {many ? " " + tx`in ${chosen.length} commits` : ""}
               </span>
               <span className={styles.grow} />
               <IconButton

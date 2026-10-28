@@ -35,14 +35,9 @@ import {
 import { addComment, checkoutPullRequest, openCommentLocation, openFileDiff, openUrl, submitReview } from "./ops";
 import { cancelBusy, loadDetails, refreshAll, select, setQuery, useGithub, type DetailTab } from "./store";
 import styles from "./Github.module.css";
-import { tx } from "@/platform/i18n";
+import { t, tx } from "@/platform/i18n";
 
-const STATES: Array<{ value: PrStateFilter; label: string }> = [
-  { value: "open", label: "Open" },
-  { value: "merged", label: "Merged" },
-  { value: "closed", label: "Closed" },
-  { value: "all", label: "All" },
-];
+const STATES: PrStateFilter[] = ["open", "merged", "closed", "all"];
 
 function Unavailable({ availability }: { availability: GhAvailability }) {
   const retry = (
@@ -138,7 +133,10 @@ function Filters() {
         className={styles.search}
       />
       <div className={styles.filterRow}>
-        <Select value={query.state} options={STATES} onChange={(state) => setQuery({ state })} aria-label="State" />
+        <Select
+          value={query.state}
+          options={STATES.map((value) => ({ value, label: t(`github.prState.${value}`) }))}
+          onChange={(state) => setQuery({ state })} aria-label="State" />
         <Checkbox checked={query.authorMe} onChange={(authorMe) => setQuery({ authorMe })} label="Mine" />
         <Checkbox
           checked={query.reviewRequested}

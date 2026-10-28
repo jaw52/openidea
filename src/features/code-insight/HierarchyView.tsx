@@ -19,6 +19,7 @@ import { openLocation } from "./ipc";
 import {
   ROOT_ID,
   directionLabel,
+  hierarchyTitle,
   hierarchyTarget,
   loadChildren,
   refreshHierarchy,
@@ -57,7 +58,7 @@ export function HierarchyTabs() {
   const direction = useHierarchy((s) => s.direction);
   const root = useHierarchy((s) => s.root);
   if (!root) return null;
-  const label = `${directionLabel(mode, direction)} of ${root.name}`;
+  const label = hierarchyTitle(mode, direction, root.name);
   return (
     <Tabs
       variant="compact"
