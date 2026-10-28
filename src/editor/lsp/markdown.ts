@@ -9,7 +9,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { LanguageDescription } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
-import { classHighlighter, highlightCode } from "@lezer/highlight";
+import { classHighlighter, highlightTree } from "@lezer/highlight";
 import type { Markup } from "@/bindings";
 import { maybeEditorService } from "@/workbench/contributions";
 import { isTauri } from "@/platform/ipc";
@@ -114,26 +114,40 @@ export interface CodeToken {
 
 /** Highlighted ranges of `text`; empty when the language is unknown or its grammar fails to load. */
 export async function highlightTokens(text: string, language: string | null): Promise<CodeToken[]> {
+  return (await codeHighlighter(text, language))?.(0, text.length) ?? [];
+}
+
+/**
+ * Parses `text` once; the result gives the highlighted ranges (positions in
+ * `text`) between `from` and `to`, so a line is coloured with the whole file
+ * as context. Null when the language is unknown or its grammar fails to load.
+ */
+export async function codeHighlighter(
+  text: string,
+  language: string | null,
+): Promise<((from: number, to: number) => CodeToken[]) | null> {
   const desc = language ? findLanguage(language) : null;
-  if (!desc) return [];
+  if (!desc) return null;
   try {
     const support = desc.support ?? (await desc.load());
     const tree = support.language.parser.parse(text);
-    const out: CodeToken[] = [];
-    let pos = 0;
-    highlightCode(
-      text,
-      tree,
-      classHighlighter,
-      (t, cls) => {
-        if (cls) out.push({ from: pos, to: pos + t.length, cls });
-        pos += t.length;
-      },
-      () => pos++,
-    );
-    return out;
+    return (from, to) => {
+      const out: CodeToken[] = [];
+      highlightTree(
+        tree,
+        classHighlighter,
+        (a, b, cls) => {
+          const s = Math.max(a, from);
+          const e = Math.min(b, to);
+          if (e > s) out.push({ from: s, to: e, cls });
+        },
+        from,
+        to,
+      );
+      return out;
+    };
   } catch {
-    return [];
+    return null;
   }
 }
 

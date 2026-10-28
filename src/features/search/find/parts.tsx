@@ -3,15 +3,26 @@ import clsx from "clsx";
 import { EditorState, StateEffect, StateField, type Range, type Text } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
 import { codePreviewExtensions } from "@/editor/api";
+import type { CodeToken } from "@/editor/lsp/markdown";
 import type { SearchQuery } from "@/platform/ipc";
 import { previewReplacement } from "./session";
-import { loadPreviewText } from "./preview";
+import { lineTokens, loadPreviewText, peekLineTokens } from "./preview";
 import type { PreviewLine } from "./replaceFlow";
 import styles from "./parts.module.css";
 import { T } from "@/ui";
 import { tx } from "@/platform/i18n";
 
-/** A result line with matches highlighted; in replace mode shows `old → new` inline. */
+/** Where a result line's `text` sits in its file: 0-based `line`, column `col`. */
+export interface MatchSource {
+  path: string;
+  line: number;
+  col: number;
+}
+
+/**
+ * A result line with matches highlighted; in replace mode shows `old → new`
+ * inline. With `source`, syntax-coloured with the whole file as context.
+ */
 export function MatchText({
   text,
   ranges,
@@ -19,6 +30,7 @@ export function MatchText({
   replacement,
   query,
   preserveCase = false,
+  source,
 }: {
   text: string;
   ranges: ReadonlyArray<readonly [number, number]>;
@@ -26,12 +38,14 @@ export function MatchText({
   replacement?: string | null;
   query?: Pick<SearchQuery, "pattern" | "isRegex" | "caseSensitive"> | null;
   preserveCase?: boolean;
+  source?: MatchSource;
 }) {
+  const tokens = useLineTokens(source, text);
   const parts: ReactNode[] = [];
   let pos = 0;
   ranges.forEach(([s, e], i) => {
     if (s < pos) return;
-    if (s > pos) parts.push(text.slice(pos, s));
+    if (s > pos) parts.push(...colored(text, pos, s, tokens, `g${i}:`));
     const matched = text.slice(s, e);
     if (replacement != null && query) {
       parts.push(
@@ -45,14 +59,62 @@ export function MatchText({
     } else {
       parts.push(
         <mark key={i} className={clsx(styles.match, active && styles.matchActive)}>
-          {matched}
+          {colored(text, s, e, tokens, "")}
         </mark>,
       );
     }
     pos = e;
   });
-  if (pos < text.length) parts.push(text.slice(pos));
-  return <span className={styles.text}>{parts}</span>;
+  if (pos < text.length) parts.push(...colored(text, pos, text.length, tokens, "end:"));
+  return <span className={clsx(styles.text, styles.code)}>{parts}</span>;
+}
+
+/** `text` between `from` and `to`, split into token-coloured spans. */
+function colored(
+  text: string,
+  from: number,
+  to: number,
+  tokens: readonly CodeToken[] | null,
+  key: string,
+): ReactNode[] {
+  if (!tokens?.length) return [text.slice(from, to)];
+  const out: ReactNode[] = [];
+  let pos = from;
+  for (const t of tokens) {
+    if (t.to <= pos) continue;
+    if (t.from >= to) break;
+    const s = Math.max(t.from, pos);
+    const e = Math.min(t.to, to);
+    if (s > pos) out.push(text.slice(pos, s));
+    out.push(
+      <span key={`${key}${s}`} className={t.cls}>
+        {text.slice(s, e)}
+      </span>,
+    );
+    pos = e;
+  }
+  if (pos < to) out.push(text.slice(pos, to));
+  return out;
+}
+
+function useLineTokens(source: MatchSource | undefined, text: string): CodeToken[] | null {
+  const path = source?.path ?? null;
+  const line = source?.line ?? 0;
+  const col = source?.col ?? 0;
+  const key = `${path}\u0000${line}\u0000${col}\u0000${text}`;
+  const [loaded, setLoaded] = useState<{ key: string; tokens: CodeToken[] } | null>(null);
+  useEffect(() => {
+    if (path == null) return;
+    let alive = true;
+    void lineTokens(path, line, col, text).then((tokens) => {
+      if (alive) setLoaded({ key, tokens });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [key, path, line, col, text]);
+  if (path == null) return null;
+  return loaded?.key === key ? loaded.tokens : peekLineTokens(path, line, col, text);
 }
 
 const WINDOW = 300;
