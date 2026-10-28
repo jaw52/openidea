@@ -1,15 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { act, render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 
-vi.mock("../find/preview", () => ({
-  loadPreviewText: async () => "",
-  clearPreviewCache: () => {},
-  peekLineTokens: () => null,
-  lineTokens: async () => [
-    { from: 0, to: 5, cls: "tok-keyword" },
-    { from: 12, to: 17, cls: "tok-string" },
-  ],
+vi.mock(import("@/platform/ipc"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  commands: { fsReadText: (path: string) => path } as never,
+  call: (async () => '/*\n * lib\n */\nconst lib = "lib";\n') as never,
 }));
+vi.mock(import("@/editor/api"), async (importOriginal) => ({ ...(await importOriginal()), editorsFor: () => [] }));
 
 const { MatchText } = await import("../find/parts");
 
@@ -18,11 +15,17 @@ describe("MatchText", () => {
     const { container } = render(
       <MatchText text={'const lib = "lib";'} ranges={[[6, 9]]} source={{ path: "/p/a.ts", line: 3, col: 0 }} />,
     );
-    await act(() => Promise.resolve());
-    expect(container.querySelector(".tok-keyword")?.textContent).toBe("const");
+    await waitFor(() => expect(container.querySelector(".tok-keyword")?.textContent).toBe("const"));
     expect(container.querySelector("mark")?.textContent).toBe("lib");
     expect(container.querySelector(".tok-string")?.textContent).toBe('"lib"');
     expect(container.textContent).toBe('const lib = "lib";');
+  });
+
+  it("colours a line inside a block comment as a comment", async () => {
+    const { container } = render(
+      <MatchText text="* lib" ranges={[[2, 5]]} source={{ path: "/p/a.ts", line: 1, col: 1 }} />,
+    );
+    await waitFor(() => expect(container.querySelector("mark .tok-comment")?.textContent).toBe("lib"));
   });
 
   it("stays plain without a source", () => {
