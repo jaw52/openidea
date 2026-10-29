@@ -16,13 +16,6 @@ if (import.meta.env.DEV && isTauri()) {
   (window as unknown as { __TAURI__?: unknown }).__TAURI__ ??= { core: { invoke }, event: { emit } };
 }
 
-if (import.meta.env.DEV && import.meta.env.VITE_REACT_SCAN) {
-  // Re-render highlighter for audits (`VITE_REACT_SCAN=1 pnpm dev`). Armed before the
-  // first render so start-up renders are counted too.
-  const { scan } = await import("react-scan");
-  scan({ enabled: true });
-}
-
 // The native Settings window (`settings-<parent>`) loads this page too.
 const settingsParent = settingsWindowParent();
 
