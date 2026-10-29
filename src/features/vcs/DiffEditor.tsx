@@ -230,6 +230,10 @@ export function DiffEditor({ input }: { input: EditorInput }) {
   const editableB = !!attached?.b && !attached.b.readOnly;
   const ready = !!attached && !!statics && lang !== null;
 
+  // Read when the views are built; toggling it later goes through `setSync`.
+  const syncScroll = useRef(opts.syncScroll);
+  syncScroll.current = opts.syncScroll;
+
   // (Re)build the CodeMirror views.
   useEffect(() => {
     const host = hostRef.current;
@@ -276,9 +280,10 @@ export function DiffEditor({ input }: { input: EditorInput }) {
     let views: Views;
     if (opts.mode === "split") {
       let merge: MergeView | null = null;
-      const panes = !opts.syncScrolling
+      const panes = opts.alignChanges
         ? null
         : new UnalignedPanes({
+            sync: syncScroll.current,
             arrows:
               editableA || editableB
                 ? { toA: editableA, toB: editableB, apply: (i, source) => merge && applyChunk(merge, i, source) }
@@ -382,7 +387,7 @@ export function DiffEditor({ input }: { input: EditorInput }) {
     statics,
     lang,
     opts.mode,
-    opts.syncScrolling,
+    opts.alignChanges,
     opts.collapse,
     opts.ignore,
     opts.highlight,
@@ -393,6 +398,8 @@ export function DiffEditor({ input }: { input: EditorInput }) {
     includable,
     path,
   ]);
+
+  useEffect(() => viewsRef.current?.panes?.setSync(opts.syncScroll), [opts.syncScroll]);
 
   useEffect(
     () => () => {
@@ -685,9 +692,16 @@ export function DiffEditor({ input }: { input: EditorInput }) {
       {
         id: "sync",
         label: "Synchronize Scrolling",
-        checked: opts.syncScrolling,
+        checked: opts.syncScroll,
         disabled: opts.mode !== "split",
-        run: () => setOpts({ syncScrolling: !opts.syncScrolling }),
+        run: () => setOpts({ syncScroll: !opts.syncScroll }),
+      },
+      {
+        id: "align",
+        label: "Align Changes",
+        checked: opts.alignChanges,
+        disabled: opts.mode !== "split",
+        run: () => setOpts({ alignChanges: !opts.alignChanges }),
       },
     ]);
   };
@@ -795,6 +809,15 @@ export function DiffEditor({ input }: { input: EditorInput }) {
           pressed={opts.collapse}
           onClick={() => setOpts({ collapse: !opts.collapse })}
         />
+        {opts.mode === "split" && (
+          <IconButton
+            icon="lock"
+            title="Synchronize Scrolling"
+            size="small"
+            pressed={opts.syncScroll}
+            onClick={() => setOpts({ syncScroll: !opts.syncScroll })}
+          />
+        )}
         {editableB && (
           <>
             <span className={styles.sep} />
@@ -894,7 +917,7 @@ export function DiffEditor({ input }: { input: EditorInput }) {
         className={clsx(
           styles.host,
           opts.highlight === "none" && styles.noHighlight,
-          opts.mode === "split" && opts.syncScrolling && styles.unaligned,
+          opts.mode === "split" && (opts.alignChanges ? !opts.syncScroll && styles.unsynced : styles.unaligned),
         )}
         hidden={!!error || !ready}
         aria-label={diffTitle(data)}

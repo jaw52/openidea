@@ -127,6 +127,8 @@ const ARROW_HEIGHT = 16;
 let gradients = 0;
 
 export interface UnalignedPanesOptions {
+  /** Scrolling one pane carries the other along. */
+  sync: boolean;
   /** Divider arrows toward the editable sides; `apply` copies chunk `index` from `source`. */
   arrows?: { toA: boolean; toB: boolean; apply(index: number, source: Side): void };
 }
@@ -148,11 +150,13 @@ export class UnalignedPanes {
     a: { top: null, left: null },
     b: { top: null, left: null },
   };
+  private sync: boolean;
   private frame = -1;
   private resize: ResizeObserver | null = null;
   private readonly cleanup: (() => void)[] = [];
 
   constructor(private readonly opts: UnalignedPanesOptions) {
+    this.sync = opts.sync;
     this.extension = [gapMarks, changedLineGutters, EditorView.updateListener.of(() => this.schedule())];
     this.divider.className = "cm-diffDivider";
     this.svg.setAttribute("aria-hidden", "true");
@@ -175,7 +179,7 @@ export class UnalignedPanes {
       el.addEventListener("scroll", onScroll, { passive: true });
       this.cleanup.push(() => el.removeEventListener("scroll", onScroll));
     }
-    // The divider scrolls the right pane (and through it the left one).
+    // The divider scrolls the right pane (and, when synchronized, through it the left one).
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       mv.b.scrollDOM.scrollBy(e.deltaX, e.deltaY);
@@ -191,8 +195,15 @@ export class UnalignedPanes {
 
   /** Brings the left pane in line with the right one. */
   resync() {
-    if (this.mv) this.follow("b");
+    if (this.mv && this.sync) this.follow("b");
     this.schedule();
+  }
+
+  /** Turns synchronized scrolling on (bringing the left pane in line) or off. */
+  setSync(on: boolean) {
+    if (on === this.sync) return;
+    this.sync = on;
+    this.resync();
   }
 
   destroy() {
@@ -215,7 +226,7 @@ export class UnalignedPanes {
       (moved.top === null || Math.abs(el.scrollTop - moved.top) <= 1) &&
       (moved.left === null || Math.abs(el.scrollLeft - moved.left) <= 1);
     moved.top = moved.left = null;
-    if (!echo) this.follow(side);
+    if (!echo && this.sync) this.follow(side);
     this.schedule();
   }
 

@@ -24,10 +24,22 @@ describe("diff options", () => {
   it("parses stored options with per-field defaults", () => {
     expect(parseDiffOptions(null)).toEqual(DEFAULT_DIFF_OPTIONS);
     expect(
-      parseDiffOptions({ mode: "split", ignore: "trim", highlight: "lines", collapse: false, syncScrolling: true }),
-    ).toEqual({ mode: "split", ignore: "trim", highlight: "lines", collapse: false, syncScrolling: true });
-    // The former aligned-scrolling toggle does not turn the unpadded panes on.
-    expect(parseDiffOptions({ syncScroll: true }).syncScrolling).toBe(false);
+      parseDiffOptions({
+        mode: "split",
+        ignore: "trim",
+        highlight: "lines",
+        collapse: false,
+        syncScroll: false,
+        alignChanges: false,
+      }),
+    ).toEqual({
+      mode: "split",
+      ignore: "trim",
+      highlight: "lines",
+      collapse: false,
+      syncScroll: false,
+      alignChanges: false,
+    });
     expect(parseDiffOptions({ ignore: "bogus", highlight: 3, collapse: "x" })).toEqual(DEFAULT_DIFF_OPTIONS);
   });
 

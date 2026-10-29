@@ -80,7 +80,7 @@ describe("Diff toolbar", () => {
     expect(probe).toHaveBeenCalledWith("/p/a.ts");
   });
 
-  it("turns on synchronized scrolling from the settings menu (off by default)", async () => {
+  it("turns off aligned changes from the settings menu (on by default)", async () => {
     localStorage.clear();
     texts.HEAD = "a\nb\n";
     texts.abc123 = "a\nnew\nb\n";
@@ -95,13 +95,21 @@ describe("Diff toolbar", () => {
     expect(document.querySelector(".cm-diffDivider")).toBeNull();
     expect(document.querySelector(".cm-changeGutter")).not.toBeNull();
     (await screen.findByRole("button", { name: "Settings" })).click();
-    const item = await screen.findByRole("menuitemcheckbox", { name: "Synchronize Scrolling" });
-    expect(item.getAttribute("aria-checked")).toBe("false");
+    const item = await screen.findByRole("menuitemcheckbox", { name: "Align Changes" });
+    expect(item.getAttribute("aria-checked")).toBe("true");
     item.click();
     await waitFor(() => expect(document.querySelector(".cm-diffDivider")).not.toBeNull());
     expect(document.querySelector(".cm-changeGutter")).toBeNull();
     expect(document.querySelector(".cm-merge-b .cm-lineNumbers .cm-diffWholeGutter")?.textContent).toBe("2");
-    expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!).syncScrolling).toBe(true);
+    expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!)).toMatchObject({
+      alignChanges: false,
+      syncScroll: true,
+    });
+    // The lock turns scrolling together off without rebuilding the panes.
+    const divider = document.querySelector(".cm-diffDivider");
+    (await screen.findByRole("button", { name: "Synchronize Scrolling" })).click();
+    await waitFor(() => expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!).syncScroll).toBe(false));
+    expect(document.querySelector(".cm-diffDivider")).toBe(divider);
     localStorage.clear();
   });
 
