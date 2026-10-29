@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Chunk, MergeView } from "@codemirror/merge";
-import { Text } from "@codemirror/state";
+import { ChangeSet, Text } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { applyChunk, arrowControls } from "../diffControls";
 import {
@@ -408,4 +408,32 @@ describe("compare entry points", () => {
     expect(parseTextsArg({ path: "/p/a", left: { text: 1 } })).toBeNull();
     expect(diffInput(compareFilesData("/p/a", "/p/b")).key).toContain("file:/p/a");
   });
+});
+
+describe("oversized line comparison", () => {
+  it("falls back to transferable chunks on initial comparison and either-side edits", () => {
+    const a = doc("alpha\n".repeat(12000) + "beta\n".repeat(12000));
+    const b = doc("beta\n".repeat(12000) + "alpha\n".repeat(12000));
+    const config = ideaDiffConfig("none", "words");
+    const built = Chunk.build(a, b, config);
+    const editB = ChangeSet.of({ from: 0, insert: "header\n" }, b.length);
+    const nextB = editB.apply(b);
+    const updatedB = Chunk.updateB(built, a, nextB, editB, config);
+    const editA = ChangeSet.of({ from: 0, insert: "other\n" }, a.length);
+    const nextA = editA.apply(a);
+    const updatedA = Chunk.updateA(built, nextA, b, editA, config);
+    for (const [chunks, source, target] of [
+      [built, a, b],
+      [updatedB, a, nextB],
+      [updatedA, nextA, b],
+    ] as const) {
+      expect(chunks.length).toBeGreaterThan(0);
+      let restored = target;
+      for (const chunk of [...chunks].reverse()) {
+        const edit = transferChunk(chunk, "a", source, restored);
+        restored = restored.replace(edit.from, edit.to, doc(edit.insert));
+      }
+      expect(restored.toString()).toBe(source.toString());
+    }
+  }, 20000);
 });

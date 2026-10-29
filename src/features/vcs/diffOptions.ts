@@ -6,6 +6,7 @@
 import { Change, Chunk, type DiffConfig } from "@codemirror/merge";
 import type { ChangeDesc, Text } from "@codemirror/state";
 import { compareTexts, type ComparisonPolicy, type LineFragment } from "./comparison";
+import { DiffTooBigError } from "./comparison/lcs";
 
 export type DiffMode = "split" | "unified";
 export type IgnorePolicy = "none" | "trim" | "whitespace" | "whitespaceAndLines";
@@ -130,7 +131,15 @@ export function ideaChunks(a: Text, b: Text, ignore: IgnorePolicy, highlight: Hi
 }
 
 function toChunks(a: Text, b: Text, idea: IdeaDiff): readonly Chunk[] {
-  return compareTexts(a.toString(), b.toString(), idea).map((f) => {
+  let compared: LineFragment[];
+  try {
+    compared = compareTexts(a.toString(), b.toString(), idea);
+  } catch (error) {
+    if (!(error instanceof DiffTooBigError)) throw error;
+    // Repeated lines can exhaust IDEA's search. Keep the viewer usable with a bounded, coarser diff.
+    return build.call(Chunk, a, b, { scanLimit: 500 });
+  }
+  return compared.map((f) => {
     // `to` is one past the last line's end, past the document for its last line.
     const toA = f.startLine1 === f.endLine1 ? f.startOffset1 : f.endLine1 === a.lines ? a.length + 1 : f.endOffset1;
     const toB = f.startLine2 === f.endLine2 ? f.startOffset2 : f.endLine2 === b.lines ? b.length + 1 : f.endOffset2;
