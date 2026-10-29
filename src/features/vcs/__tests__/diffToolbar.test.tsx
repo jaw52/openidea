@@ -94,7 +94,7 @@ describe("Diff toolbar", () => {
     // Unpadded panes joined by the divider.
     await waitFor(() => expect(document.querySelector(".cm-diffDivider")).not.toBeNull());
     expect(document.querySelector(".cm-changeGutter")).toBeNull();
-    expect(document.querySelector(".cm-merge-b .cm-lineNumbers .cm-diffWholeGutter")?.textContent).toBe("2");
+    expect(document.querySelector(".cm-merge-b .cm-lineNumbers .cm-diffGutter-inserted")?.textContent).toBe("2");
     // The lock turns scrolling together off without rebuilding the panes.
     const divider = document.querySelector(".cm-diffDivider");
     (await screen.findByRole("button", { name: "Synchronize Scrolling" })).click();
@@ -104,9 +104,9 @@ describe("Diff toolbar", () => {
     const item = await screen.findByRole("menuitemcheckbox", { name: "Align Changes" });
     expect(item.getAttribute("aria-checked")).toBe("false");
     item.click();
-    // Padded panes with a change bar.
+    // Padded panes, the changed lines' gutters still tinted as in IDEA.
     await waitFor(() => expect(document.querySelector(".cm-diffDivider")).toBeNull());
-    expect(document.querySelector(".cm-changeGutter")).not.toBeNull();
+    expect(document.querySelector(".cm-merge-b .cm-lineNumbers .cm-diffGutter-inserted")?.textContent).toBe("2");
     expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!)).toMatchObject({
       alignChanges: true,
       syncScroll: false,
