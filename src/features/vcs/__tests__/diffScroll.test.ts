@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { Chunk, MergeView } from "@codemirror/merge";
 import { Text } from "@codemirror/state";
-import { bandPath, bandsOf, transferY } from "../diffScroll";
+import { bandAt, bandPath, transferY, type Band } from "../diffScroll";
 
 const doc = (s: string) => Text.of(s.split("\n"));
 const LINE = 20;
 
-/** Bands of two texts with every line LINE px tall. */
+/** The band at `y` of side `from` in two texts with every line LINE px tall. */
 function bands(a: string, b: string) {
   const da = doc(a);
   const db = doc(b);
@@ -15,51 +15,69 @@ function bands(a: string, b: string) {
     const top = (d.lineAt(from).number - 1) * LINE;
     return from >= to ? [top, top] : [top, d.lineAt(Math.min(to - 1, d.length)).number * LINE];
   };
-  return bandsOf(
-    Chunk.build(da, db),
-    (c) => ext(da, c.fromA, c.toA),
-    (c) => ext(db, c.fromB, c.toB),
-    da.lines * LINE,
-    db.lines * LINE,
-  );
+  const chunks = Chunk.build(da, db);
+  return (y: number, from: "a" | "b"): Band =>
+    bandAt(
+      chunks,
+      (c) => ext(da, c.fromA, c.toA),
+      (c) => ext(db, c.fromB, c.toB),
+      da.lines * LINE,
+      db.lines * LINE,
+      y,
+      from,
+    );
 }
 
 describe("unaligned side-by-side scrolling", () => {
   // Right side inserts three lines after line 2 and changes line 5 into two lines.
   const a = "1\n2\n3\n4\n5\n6\n7";
   const b = "1\n2\nx\ny\nz\n3\n4\nfive\nfive'\n6\n7";
-  const all = bands(a, b);
+  const bandOf = bands(a, b);
+  const at = (y: number, from: "a" | "b") => transferY([bandOf(y, from)], y, from);
 
   it("splits both documents into unchanged and changed bands", () => {
-    expect(all.map((x) => [x.a0, x.a1, x.b0, x.b1, x.changed])).toEqual([
+    const row = (x: Band) => [x.a0, x.a1, x.b0, x.b1, x.changed];
+    expect([0, 39, 40, 79, 80, 99, 100, 139].map((y) => row(bandOf(y, "a")))).toEqual([
+      [0, 40, 0, 40, false],
+      [0, 40, 0, 40, false],
+      [40, 80, 100, 140, false],
+      [40, 80, 100, 140, false],
+      [80, 100, 140, 180, true],
+      [80, 100, 140, 180, true],
+      [100, 140, 180, 220, false],
+      [100, 140, 180, 220, false],
+    ]);
+    expect([0, 40, 99, 100, 140, 179, 180].map((y) => row(bandOf(y, "b")))).toEqual([
       [0, 40, 0, 40, false],
       [40, 40, 40, 100, true],
+      [40, 40, 40, 100, true],
       [40, 80, 100, 140, false],
+      [80, 100, 140, 180, true],
       [80, 100, 140, 180, true],
       [100, 140, 180, 220, false],
     ]);
   });
 
   it("maps unchanged text straight through", () => {
-    expect(transferY(all, 10, "a")).toBe(10);
-    expect(transferY(all, 50, "a")).toBe(110);
-    expect(transferY(all, 130, "a")).toBe(210);
-    expect(transferY(all, 210, "b")).toBe(130);
+    expect(at(10, "a")).toBe(10);
+    expect(at(50, "a")).toBe(110);
+    expect(at(130, "a")).toBe(210);
+    expect(at(210, "b")).toBe(130);
   });
 
   it("jumps over an insertion when scrolling the side without it", () => {
-    expect(transferY(all, 39, "a")).toBe(39);
-    expect(transferY(all, 40, "a")).toBe(100);
+    expect(at(39, "a")).toBe(39);
+    expect(at(40, "a")).toBe(100);
   });
 
   it("waits at the boundary while the inserted lines scroll by", () => {
-    for (const y of [40, 60, 99]) expect(transferY(all, y, "b")).toBe(40);
+    for (const y of [40, 60, 99]) expect(at(y, "b")).toBe(40);
   });
 
   it("follows line by line inside a change, then waits at the shorter end", () => {
-    expect(transferY(all, 150, "b")).toBe(90);
-    expect(transferY(all, 170, "b")).toBe(100);
-    expect(transferY(all, 90, "a")).toBe(150);
+    expect(at(150, "b")).toBe(90);
+    expect(at(170, "b")).toBe(100);
+    expect(at(90, "a")).toBe(150);
   });
 
   it("scales unchanged text of different heights (wrapped lines)", () => {

@@ -33,29 +33,48 @@ function extent(view: EditorView, from: number, to: number): [number, number] {
   return from >= to ? [top, top] : [top, view.lineBlockAt(Math.min(to - 1, len)).bottom];
 }
 
+/** First index in `[0, n)` for which `past` holds, given that it holds for a suffix. */
+function firstIndex(n: number, past: (i: number) => boolean): number {
+  let lo = 0;
+  let hi = n;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (past(mid)) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
 /**
- * Splits both documents into alternating unchanged / changed bands, from the
- * top to `endA` / `endB` (BaseSyncScrollable.processHelper).
+ * The stretch of both documents around `y` of side `from`, from the top to
+ * `endA` / `endB`: unchanged text, or a change (BaseSyncScrollable.processHelper).
+ * Only the chunks next to `y` are measured.
  */
-export function bandsOf(
+export function bandAt(
   chunks: readonly Chunk[],
   extentA: (c: Chunk) => [number, number],
   extentB: (c: Chunk) => [number, number],
   endA: number,
   endB: number,
-): Band[] {
-  const out: Band[] = [];
+  y: number,
+  from: Side,
+): Band {
+  const master = from === "a" ? extentA : extentB;
+  const next = firstIndex(chunks.length, (i) => master(chunks[i]!)[0] > y);
   let a = 0;
   let b = 0;
-  for (const c of chunks) {
-    const [a0, a1] = extentA(c);
-    const [b0, b1] = extentB(c);
-    out.push({ a0: a, a1: a0, b0: b, b1: b0, changed: false }, { a0, a1, b0, b1, changed: true });
+  const prev = chunks[next - 1];
+  if (prev) {
+    const [a0, a1] = extentA(prev);
+    const [b0, b1] = extentB(prev);
+    if (y < (from === "a" ? a1 : b1)) return { a0, a1, b0, b1, changed: true };
     a = a1;
     b = b1;
   }
-  out.push({ a0: a, a1: endA, b0: b, b1: endB, changed: false });
-  return out;
+  const c = chunks[next];
+  return c
+    ? { a0: a, a1: extentA(c)[0], b0: b, b1: extentB(c)[0], changed: false }
+    : { a0: a, a1: endA, b0: b, b1: endB, changed: false };
 }
 
 /**
@@ -230,14 +249,16 @@ export class UnalignedPanes {
     this.schedule();
   }
 
-  private bands(): Band[] {
+  private bandAt(y: number, from: Side): Band {
     const { a, b, chunks } = this.mv!;
-    return bandsOf(
+    return bandAt(
       chunks,
       (c) => extent(a, c.fromA, c.toA),
       (c) => extent(b, c.fromB, c.toB),
       a.lineBlockAt(a.state.doc.length).bottom,
       b.lineBlockAt(b.state.doc.length).bottom,
+      y,
+      from,
     );
   }
 
@@ -247,7 +268,8 @@ export class UnalignedPanes {
     const master = this.view(from);
     const slave = this.view(to);
     const anchor = master.scrollDOM.clientHeight / 3;
-    const y = transferY(this.bands(), master.scrollDOM.scrollTop + anchor - docOffset(master), from);
+    const at = master.scrollDOM.scrollTop + anchor - docOffset(master);
+    const y = transferY([this.bandAt(at, from)], at, from);
     const el = slave.scrollDOM;
     const top = Math.max(0, Math.min(y + docOffset(slave) - anchor, el.scrollHeight - el.clientHeight));
     const moved = this.moved[to];
@@ -287,10 +309,18 @@ export class UnalignedPanes {
     const arrows = this.opts.arrows;
     const shown = new Set<string>();
     let paths = "";
-    mv.chunks.forEach((c, i) => {
+    const { chunks } = mv;
+    // Chunks run down both panes in order: start at the first one reaching into either.
+    const first = Math.min(
+      firstIndex(chunks.length, (i) => extent(mv.a, chunks[i]!.fromA, chunks[i]!.toA)[1] + offA >= -1),
+      firstIndex(chunks.length, (i) => extent(mv.b, chunks[i]!.fromB, chunks[i]!.toB)[1] + offB >= -1),
+    );
+    for (let i = first; i < chunks.length; i++) {
+      const c = chunks[i]!;
       const [a0, a1] = extent(mv.a, c.fromA, c.toA).map((y) => y + offA) as [number, number];
       const [b0, b1] = extent(mv.b, c.fromB, c.toB).map((y) => y + offB) as [number, number];
-      if ((a1 < -1 && b1 < -1) || (a0 > h + 1 && b0 > h + 1)) return;
+      if (a0 > h + 1 && b0 > h + 1) break;
+      if (a1 < -1 && b1 < -1) continue;
       const kind = kindOf(c);
       const fill = kind === "modified" ? ` fill="url(#${this.gradient})"` : "";
       const mid = (a0 + a1) / 2;
@@ -300,7 +330,7 @@ export class UnalignedPanes {
         `<path class="cm-diffBandLine cm-diffBand-${kind}" d="M0 ${mid}C${w * 0.3} ${mid} ${w * 0.7} ${midB} ${w} ${midB}"/>`;
       if (arrows?.toB) this.placeArrow(shown, i, "a-to-b", arrowTop(a0, a1), h);
       if (arrows?.toA) this.placeArrow(shown, i, "b-to-a", arrowTop(b0, b1), h);
-    });
+    }
     this.bandLayer.innerHTML = paths;
     for (const [key, el] of this.arrowEls)
       if (!shown.has(key)) {
