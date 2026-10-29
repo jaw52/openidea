@@ -43,7 +43,7 @@ export const DEFAULT_DIFF_OPTIONS: DiffViewOptions = {
   highlight: "words",
   collapse: true,
   syncScroll: true,
-  alignChanges: true,
+  alignChanges: false,
 };
 
 const KEY = "openidea.vcs.diffOptions";

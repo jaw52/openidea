@@ -80,7 +80,7 @@ describe("Diff toolbar", () => {
     expect(probe).toHaveBeenCalledWith("/p/a.ts");
   });
 
-  it("turns off aligned changes from the settings menu (on by default)", async () => {
+  it("turns on aligned changes from the settings menu (off by default)", async () => {
     localStorage.clear();
     texts.HEAD = "a\nb\n";
     texts.abc123 = "a\nnew\nb\n";
@@ -91,25 +91,26 @@ describe("Diff toolbar", () => {
       </>,
     );
     await waitFor(() => expect(document.querySelectorAll(".cm-mergeViewEditor .cm-editor")).toHaveLength(2));
-    // Padded panes with a change bar, as before.
-    expect(document.querySelector(".cm-diffDivider")).toBeNull();
-    expect(document.querySelector(".cm-changeGutter")).not.toBeNull();
-    (await screen.findByRole("button", { name: "Settings" })).click();
-    const item = await screen.findByRole("menuitemcheckbox", { name: "Align Changes" });
-    expect(item.getAttribute("aria-checked")).toBe("true");
-    item.click();
+    // Unpadded panes joined by the divider.
     await waitFor(() => expect(document.querySelector(".cm-diffDivider")).not.toBeNull());
     expect(document.querySelector(".cm-changeGutter")).toBeNull();
     expect(document.querySelector(".cm-merge-b .cm-lineNumbers .cm-diffWholeGutter")?.textContent).toBe("2");
-    expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!)).toMatchObject({
-      alignChanges: false,
-      syncScroll: true,
-    });
     // The lock turns scrolling together off without rebuilding the panes.
     const divider = document.querySelector(".cm-diffDivider");
     (await screen.findByRole("button", { name: "Synchronize Scrolling" })).click();
     await waitFor(() => expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!).syncScroll).toBe(false));
     expect(document.querySelector(".cm-diffDivider")).toBe(divider);
+    (await screen.findByRole("button", { name: "Settings" })).click();
+    const item = await screen.findByRole("menuitemcheckbox", { name: "Align Changes" });
+    expect(item.getAttribute("aria-checked")).toBe("false");
+    item.click();
+    // Padded panes with a change bar.
+    await waitFor(() => expect(document.querySelector(".cm-diffDivider")).toBeNull());
+    expect(document.querySelector(".cm-changeGutter")).not.toBeNull();
+    expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!)).toMatchObject({
+      alignChanges: true,
+      syncScroll: false,
+    });
     localStorage.clear();
   });
 
