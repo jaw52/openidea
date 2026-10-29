@@ -2,10 +2,9 @@ import * as stylex from "@stylexjs/stylex";
 import { Dialog } from "@base-ui/react/dialog";
 import { publicAsset } from "../lib/paths.mjs";
 import { styles as s } from "./home.stylex";
+import { SiteHeader, SiteFooter, repository, docs } from "./SiteLayout";
+import { useDownloadPath } from "./useDownloadPath";
 
-const repository = "https://github.com/l0ng-ai/openidea";
-const downloads = `${repository}/releases/latest`;
-const docs = `${repository}#build`;
 const screenshot = publicAsset("media/debug.jpg", import.meta.env.BASE_URL);
 const imageDescription = "A Rust project in OpenIDEA, paused at a breakpoint with variables visible in the debugger.";
 
@@ -40,34 +39,10 @@ function ProductPreview() {
 }
 
 export function Home() {
+  const downloads = useDownloadPath();
   return (
     <>
-      <a {...stylex.props(s.skipLink)} href="#main">
-        Skip to content
-      </a>
-      <header {...stylex.props(s.wide, s.header)}>
-        <a {...stylex.props(s.brand)} href={import.meta.env.BASE_URL} aria-label="OpenIDEA home">
-          <img
-            {...stylex.props(s.mark)}
-            src={publicAsset("mark.svg", import.meta.env.BASE_URL)}
-            width={39}
-            height={39}
-            alt=""
-          />
-          OpenIDEA
-        </a>
-        <nav {...stylex.props(s.nav)} aria-label="Main navigation">
-          <a {...stylex.props(s.navLink)} href={docs}>
-            Docs
-          </a>
-          <a {...stylex.props(s.navLink)} href={repository}>
-            GitHub
-          </a>
-          <a {...stylex.props(s.navLink, s.navDownload)} href="#download">
-            Download
-          </a>
-        </nav>
-      </header>
+      <SiteHeader />
       <main id="main">
         <section {...stylex.props(s.content, s.hero)} aria-labelledby="headline">
           <ProductPreview />
@@ -189,19 +164,7 @@ export function Home() {
           </a>
         </section>
       </main>
-      <footer {...stylex.props(s.wide, s.footer)}>
-        <div {...stylex.props(s.footerMain)}>
-          <span>OpenIDEA</span>
-          <div {...stylex.props(s.footerLinks)}>
-            <a href={`${repository}/releases`}>Releases</a>
-            <a href={repository}>GitHub</a>
-            <a href={`${repository}/blob/main/LICENSE`}>Apache 2.0</a>
-          </div>
-        </div>
-        <p {...stylex.props(s.trademark)}>
-          Not affiliated with JetBrains. IntelliJ IDEA is a trademark of JetBrains s.r.o.
-        </p>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

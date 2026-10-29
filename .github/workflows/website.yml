@@ -11,6 +11,12 @@ on:
       - "website/**"
       - ".github/workflows/website.yml"
   workflow_dispatch:
+  release:
+    types: [published]
+  # Releases published by GITHUB_TOKEN do not trigger another release workflow.
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
 
 permissions:
   contents: read
@@ -21,6 +27,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -40,6 +47,10 @@ jobs:
           cache-dependency-path: website/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+      - name: Refresh official release downloads
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm release:refresh
       # A PR must be testable before Pages has been enabled in repository settings.
       - id: pages
         if: github.event_name != 'pull_request'

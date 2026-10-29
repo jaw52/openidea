@@ -47,6 +47,15 @@ canonical URL. The workflow uploads only `website/dist/client`. Deployment permi
 are restricted to the deploy job; no personal access token is needed by the workflow.
 Check the existing `github-pages` environment's branch rules if GitHub blocks a deploy.
 
-The homepage's download links point to the upstream product's latest GitHub Release,
-so publishing a new release does not require updating the website. The benchmark follows
-the root README; update `src/components/Home.tsx` when the published measurements change.
+Homepage download buttons open the matching macOS, Windows or Linux page when a desktop
+platform can be identified. Mobile and unknown systems open the platform chooser. Each
+platform page links directly to actual installer assets, with explicit architecture and
+package format choices. All download pages are prerendered and work without JavaScript.
+
+`src/data/release.json` is a checked-in snapshot of the official stable release so local
+builds work offline. Run `pnpm release:refresh` to refresh it from GitHub. CI refreshes it
+before building; publishing a release or completing the Release workflow also rebuilds
+the website. No browser-time GitHub API requests or API tokens are needed.
+
+The benchmark follows the root README; update `src/components/Home.tsx` when the published
+measurements change.

@@ -16,12 +16,7 @@ export const Route = createRootRoute({
       },
       { name: "theme-color", content: "#191a1c" },
     ],
-    links: [
-      { rel: "icon", type: "image/svg+xml", href: publicAsset("mark.svg", import.meta.env.BASE_URL) },
-      ...(import.meta.env.VITE_SITE_URL
-        ? [{ rel: "canonical", href: `${import.meta.env.VITE_SITE_URL.replace(/\/$/, "")}/` }]
-        : []),
-    ],
+    links: [{ rel: "icon", type: "image/svg+xml", href: publicAsset("mark.svg", import.meta.env.BASE_URL) }],
   }),
   component: Root,
 });

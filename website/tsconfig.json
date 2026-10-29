@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "allowJs": true,
+    "resolveJsonModule": true,
     "checkJs": true,
     "types": ["vite/client", "node"]
   },

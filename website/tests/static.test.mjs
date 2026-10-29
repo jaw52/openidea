@@ -38,3 +38,16 @@ test("checks a complete static page without needing a server", async (t) => {
   const root = await fixture(t, content);
   assert.equal((await checkStatic(root, "/openidea/")).assets, 1);
 });
+
+test("rejects a linked download directory without a prerendered index", async (t) => {
+  const root = await fixture(t, `${content}<a href="/openidea/download/macos/">Download</a>`);
+  await mkdir(join(root, "download/macos"), { recursive: true });
+  await assert.rejects(checkStatic(root, "/openidea/"), /missing.*index/i);
+});
+
+test("also checks local assets referenced from platform download pages", async (t) => {
+  const root = await fixture(t, `${content}<a href="/openidea/download/">Download</a>`);
+  await mkdir(join(root, "download"));
+  await writeFile(join(root, "download/index.html"), '<h1>Download OpenIDEA</h1><img src="/openidea/missing.png">');
+  await assert.rejects(checkStatic(root, "/openidea/"), /missing asset/i);
+});

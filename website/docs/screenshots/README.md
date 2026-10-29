@@ -1,11 +1,11 @@
-# Responsive website screenshots
+# Website screenshots
 
-Full-page captures of the prerendered production website, served as static files at
-`/openidea/`. Device names refer to browser viewport sizes, not physical-device testing.
+Full-page desktop captures of the prerendered production website, served as static
+files at `/openidea/`. These images show only the web page, without browser chrome.
 
-| Viewport      | Width  | Screenshot                  |
-| ------------- | ------ | --------------------------- |
-| Desktop       | 1280px | [Full page](desktop.jpg)    |
-| Tablet        | 834px  | [Full page](tablet.jpg)     |
-| Mobile        | 390px  | [Full page](mobile.jpg)     |
-| Narrow mobile | 320px  | [Full page](mobile-320.jpg) |
+| Page             | Width  | Screenshot                        |
+| ---------------- | ------ | --------------------------------- |
+| Homepage         | 1280px | [Full page](desktop.jpg)          |
+| macOS download   | 1280px | [Full page](download-macos.jpg)   |
+| Windows download | 1280px | [Full page](download-windows.jpg) |
+| Linux download   | 1280px | [Full page](download-linux.jpg)   |
