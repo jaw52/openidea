@@ -15,7 +15,12 @@ export interface DiffViewOptions {
   ignore: IgnorePolicy;
   highlight: HighlightPolicy;
   collapse: boolean;
-  syncScroll: boolean;
+  /**
+   * IDEA's synchronized scrolling of the side-by-side panes: unpadded panes
+   * that carry each other along, with a curved divider. Off, the panes are
+   * padded so unchanged lines line up and scroll together.
+   */
+  syncScrolling: boolean;
 }
 
 export const IGNORE_OPTIONS: ReadonlyArray<{ value: IgnorePolicy; label: string }> = [
@@ -36,7 +41,7 @@ export const DEFAULT_DIFF_OPTIONS: DiffViewOptions = {
   ignore: "none",
   highlight: "words",
   collapse: true,
-  syncScroll: true,
+  syncScrolling: false,
 };
 
 const KEY = "openidea.vcs.diffOptions";
@@ -53,7 +58,7 @@ export function parseDiffOptions(raw: unknown): DiffViewOptions {
     ignore: oneOf(o.ignore, IGNORE_OPTIONS, d.ignore),
     highlight: oneOf(o.highlight, HIGHLIGHT_OPTIONS, d.highlight),
     collapse: typeof o.collapse === "boolean" ? o.collapse : d.collapse,
-    syncScroll: typeof o.syncScroll === "boolean" ? o.syncScroll : d.syncScroll,
+    syncScrolling: typeof o.syncScrolling === "boolean" ? o.syncScrolling : d.syncScrolling,
   };
 }
 

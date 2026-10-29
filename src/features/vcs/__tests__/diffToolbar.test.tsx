@@ -4,7 +4,7 @@ import type { EditorInput } from "@/workbench/contributions";
 import { Chunk } from "@codemirror/merge";
 import { Text } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { iconMarkup } from "@/ui";
+import { ContextMenuHost, iconMarkup } from "@/ui";
 
 const probe = vi.fn();
 const openFile = vi.fn();
@@ -78,6 +78,31 @@ describe("Diff toolbar", () => {
     render(<DiffEditor input={input} />);
     await screen.findByRole("button", { name: "Jump to Source" });
     expect(probe).toHaveBeenCalledWith("/p/a.ts");
+  });
+
+  it("turns on synchronized scrolling from the settings menu (off by default)", async () => {
+    localStorage.clear();
+    texts.HEAD = "a\nb\n";
+    texts.abc123 = "a\nnew\nb\n";
+    render(
+      <>
+        <DiffEditor input={input} />
+        <ContextMenuHost />
+      </>,
+    );
+    await waitFor(() => expect(document.querySelectorAll(".cm-mergeViewEditor .cm-editor")).toHaveLength(2));
+    // Padded panes with a change bar, as before.
+    expect(document.querySelector(".cm-diffDivider")).toBeNull();
+    expect(document.querySelector(".cm-changeGutter")).not.toBeNull();
+    (await screen.findByRole("button", { name: "Settings" })).click();
+    const item = await screen.findByRole("menuitemcheckbox", { name: "Synchronize Scrolling" });
+    expect(item.getAttribute("aria-checked")).toBe("false");
+    item.click();
+    await waitFor(() => expect(document.querySelector(".cm-diffDivider")).not.toBeNull());
+    expect(document.querySelector(".cm-changeGutter")).toBeNull();
+    expect(document.querySelector(".cm-merge-b .cm-lineNumbers .cm-diffWholeGutter")?.textContent).toBe("2");
+    expect(JSON.parse(localStorage.getItem("openidea.vcs.diffOptions")!).syncScrolling).toBe(true);
+    localStorage.clear();
   });
 
   it("has no Jump to Source when the file is gone from the working tree", async () => {
